@@ -1,0 +1,50 @@
+const fs = require('fs')
+const express = require('express')
+const app = express()
+
+app.use(express.urlencoded({ extended: false }))
+
+app.get("/", (req, res) => {
+    res.sendFile(__dirname + "/public/index.html")
+})
+
+app.get("/addtask", (req, res) => {
+    res.sendFile(__dirname + "/public/addtask.html")
+})
+
+app.post("/addtask", (req, res) => {
+    const taskData = req.body.task
+    fs.readFile(__dirname + "/tasks.json", (err, data) => {
+        try {
+            const fsData = JSON.parse(data.toString())
+            fsData.push({
+                task: taskData,
+                taskId: fsData.length
+            })
+            fs.writeFile(__dirname + "/tasks.json", JSON.stringify(fsData), (err) => {
+                res.status(200).json({ message: "Added successfully!" })
+            })
+        }
+        catch (err) {
+            fs.writeFile(__dirname + "/tasks.json", JSON.stringify([{ task: req.body.task, taskId: 0 }]), (err) => {
+                res.status(200).json({ message: "Added successfully!" })
+            })
+        }
+    })
+})
+
+app.get("/tasks", (req, res) => {
+    fs.readFile(__dirname + "/tasks.json", (err, data) => {
+        if (!err) res.send(JSON.parse(data.toString()))
+        else res.send(err)
+    })
+})
+
+app.get("*", (req, res) => {
+    res.status(404).send("Error 404: Page not found.")
+})
+
+app.listen(3000, (err) => {
+    if (err) console.log(err);
+    else console.log("Server Running!");
+})
